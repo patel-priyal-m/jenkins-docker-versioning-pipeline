@@ -69,7 +69,7 @@ pipeline {
                     echo "Committing version bump to main branch..."
                     
                     withCredentials([usernamePassword(
-                        credentialsId: 'github-pat',
+                        credentialsId: 'github-creds',
                         usernameVariable: 'GIT_USERNAME',
                         passwordVariable: 'GIT_PASSWORD'
                     )]) {
@@ -96,7 +96,7 @@ pipeline {
                     echo "Creating Git tag v${env.NEW_VERSION}..."
                     
                     withCredentials([usernamePassword(
-                        credentialsId: 'github-pat',
+                        credentialsId: 'github-creds',
                         usernameVariable: 'GIT_USERNAME',
                         passwordVariable: 'GIT_PASSWORD'
                     )]) {
@@ -153,7 +153,7 @@ pipeline {
                     echo "Pushing images to Nexus repository..."
                     
                     withCredentials([usernamePassword(
-                        credentialsId: 'nexus-credentials',
+                        credentialsId: 'nexus-docker-repo-cred',
                         usernameVariable: 'NEXUS_USERNAME',
                         passwordVariable: 'NEXUS_PASSWORD'
                     )]) {

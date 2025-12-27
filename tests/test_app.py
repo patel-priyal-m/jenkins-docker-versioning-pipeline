@@ -1,6 +1,7 @@
 """
 Unit tests for calculator application
 """
+
 import pytest
 import sys
 import os
