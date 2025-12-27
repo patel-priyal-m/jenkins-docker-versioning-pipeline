@@ -388,7 +388,7 @@ This is a learning/portfolio project. Feel free to use and modify.
 
 ## 👤 Author
 
-[Your Name] - DevOps Engineer
+Priyal Patel
 
 ---
 
