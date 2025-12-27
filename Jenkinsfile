@@ -18,6 +18,21 @@ pipeline {
     }
     
     stages {
+        stage('Check Commit Author') {
+            steps {
+                script {
+                    def commitAuthor = sh(script: 'git log -1 --pretty=%an', returnStdout: true).trim()
+                    echo "Last commit author: ${commitAuthor}"
+                    
+                    if (commitAuthor == 'Jenkins CI') {
+                        echo "⏭️  Skipping build - commit was made by Jenkins itself"
+                        currentBuild.result = 'NOT_BUILT'
+                        error('Skipping Jenkins self-triggered build')
+                    }
+                }
+            }
+        }
+        
         stage('Read Current Version') {
             steps {
                 script {
