@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     parameters {
-        string(name: 'GITHUB_REPO_URL', defaultValue: 'github.com/YOUR-USERNAME/YOUR-REPO.git', description: 'GitHub repository URL (without https://)')
+        string(name: 'GITHUB_REPO_URL', defaultValue: 'github.com/patel-priyal-m/jenkins-docker-versioning-pipeline.git', description: 'GitHub repository URL (without https://)')
         string(name: 'NEXUS_REGISTRY', defaultValue: '159.203.56.144:8083', description: 'Nexus Docker registry URL with port')
         string(name: 'NEXUS_REPO', defaultValue: 'docker-private', description: 'Nexus repository name')
         string(name: 'DOCKER_IMAGE_NAME', defaultValue: 'calculator-app', description: 'Docker image name')
