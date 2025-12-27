@@ -1,0 +1,6 @@
+# Production dependencies
+# (none needed for this simple app)
+
+# Development dependencies
+black==24.1.1
+pytest==7.4.3
