@@ -26,6 +26,11 @@ def divide(a, b):
     return a / b
 
 
+def power(a, b):
+    """Raise a to the power of b"""
+    return a**b
+
+
 class Calculator:
     def __init__(self, name):
         self.name = name
