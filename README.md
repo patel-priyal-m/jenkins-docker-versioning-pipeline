@@ -107,13 +107,13 @@ git push -u origin main
 **GitHub PAT:**
 1. **Manage Jenkins** → **Credentials** → **System** → **Global credentials**
 2. Add **Username with password**:
-   - ID: `github-pat`
+   - ID: `github-creds`
    - Username: Your GitHub username
    - Password: Your Personal Access Token
 
 **Nexus Credentials:**
 1. Add **Username with password**:
-   - ID: `nexus-credentials`
+   - ID: `nexus-docker-repo-cred`
    - Username: Your Nexus username
    - Password: Your Nexus password
 
@@ -123,7 +123,7 @@ git push -u origin main
    - Definition: **Pipeline script from SCM**
    - SCM: **Git**
    - Repository URL: `https://github.com/YOUR-USERNAME/YOUR-REPO.git`
-   - Credentials: Select `github-pat`
+   - Credentials: Select `github-creds`
    - Branch: `*/main`
    - Script Path: `Jenkinsfile`
 3. **Build Triggers**:
