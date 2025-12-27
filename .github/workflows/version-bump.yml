@@ -15,7 +15,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
           fetch-depth: 0
           persist-credentials: true
       
@@ -31,8 +31,68 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
       
-      - name: Read current version
+      - name: Check if VERSION was manually changed
         if: steps.check_author.outputs.skip == 'false'
+        id: check_version_changed
+        run: |
+          # Check if VERSION file was modified in the last commit
+          if git diff HEAD^ HEAD --name-only | grep -q "^VERSION$"; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "⚠️ VERSION file was manually changed in this commit"
+            
+            # Get old and new versions for validation
+            OLD_VERSION=$(git show HEAD^:VERSION)
+            NEW_VERSION=$(cat VERSION)
+            echo "old_version=$OLD_VERSION" >> $GITHUB_OUTPUT
+            echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+            echo "📊 Version change: $OLD_VERSION → $NEW_VERSION"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "✅ VERSION not modified - will auto-increment"
+          fi
+      
+      - name: Validate manual version bump
+        if: steps.check_author.outputs.skip == 'false' && steps.check_version_changed.outputs.changed == 'true'
+        run: |
+          OLD_VERSION="${{ steps.check_version_changed.outputs.old_version }}"
+          NEW_VERSION="${{ steps.check_version_changed.outputs.new_version }}"
+          
+          # Parse semantic versions
+          IFS='.' read -r OLD_MAJOR OLD_MINOR OLD_PATCH <<< "$OLD_VERSION"
+          IFS='.' read -r NEW_MAJOR NEW_MINOR NEW_PATCH <<< "$NEW_VERSION"
+          
+          # Compare versions
+          VALID=false
+          
+          if (( NEW_MAJOR > OLD_MAJOR )); then
+            VALID=true
+          elif (( NEW_MAJOR == OLD_MAJOR )); then
+            if (( NEW_MINOR > OLD_MINOR )); then
+              VALID=true
+            elif (( NEW_MINOR == OLD_MINOR )); then
+              if (( NEW_PATCH > OLD_PATCH )); then
+                VALID=true
+              fi
+            fi
+          fi
+          
+          if [ "$VALID" = false ]; then
+            echo "❌ ERROR: Invalid version bump!"
+            echo "   Current version: $OLD_VERSION"
+            echo "   Your version: $NEW_VERSION"
+            echo ""
+            echo "Version must be GREATER than current version."
+            echo "Examples of valid bumps from $OLD_VERSION:"
+            echo "  - Patch: $OLD_MAJOR.$OLD_MINOR.$((OLD_PATCH + 1))"
+            echo "  - Minor: $OLD_MAJOR.$((OLD_MINOR + 1)).0"
+            echo "  - Major: $((OLD_MAJOR + 1)).0.0"
+            exit 1
+          else
+            echo "✅ Valid version bump: $OLD_VERSION → $NEW_VERSION"
+          fi
+      
+      - name: Read current version
+        if: steps.check_author.outputs.skip == 'false' && steps.check_version_changed.outputs.changed == 'false'
         id: current_version
         run: |
           VERSION=$(cat VERSION)
@@ -40,7 +100,7 @@ jobs:
           echo "Current version: $VERSION"
       
       - name: Increment version
-        if: steps.check_author.outputs.skip == 'false'
+        if: steps.check_author.outputs.skip == 'false' && steps.check_version_changed.outputs.changed == 'false'
         id: new_version
         run: |
           VERSION=${{ steps.current_version.outputs.current }}
@@ -52,7 +112,7 @@ jobs:
           echo "New version: $NEW_VERSION"
       
       - name: Commit version bump
-        if: steps.check_author.outputs.skip == 'false'
+        if: steps.check_author.outputs.skip == 'false' && steps.check_version_changed.outputs.changed == 'false'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -61,13 +121,22 @@ jobs:
           git push
       
       - name: Create Git tag
-        if: steps.check_author.outputs.skip == 'false'
+        if: steps.check_author.outputs.skip == 'false' && steps.check_version_changed.outputs.changed == 'false'
         run: |
           git tag -a "v${{ steps.new_version.outputs.version }}" -m "Release version ${{ steps.new_version.outputs.version }}"
           git push origin "v${{ steps.new_version.outputs.version }}"
       
+      - name: Tag manually bumped version
+        if: steps.check_author.outputs.skip == 'false' && steps.check_version_changed.outputs.changed == 'true'
+        run: |
+          MANUAL_VERSION=$(cat VERSION)
+          echo "📌 Creating tag for manually set version: v$MANUAL_VERSION"
+          git tag -a "v$MANUAL_VERSION" -m "Release version $MANUAL_VERSION (manual bump)"
+          git push origin "v$MANUAL_VERSION"
+      
       - name: Trigger Jenkins
         if: steps.check_author.outputs.skip == 'false'
         run: |
-          echo "✅ Version bumped to ${{ steps.new_version.outputs.version }}"
+          FINAL_VERSION=$(cat VERSION)
+          echo "✅ Version: $FINAL_VERSION"
           echo "Jenkins will now build and push to Nexus via webhook"
